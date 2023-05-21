@@ -1,0 +1,44 @@
+name: Run GZoltar Action
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+  workflow_dispatch:
+
+jobs:
+  maven-example:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./com.gzoltar.maven.examples
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-java@v2
+        with:
+          java-version: "8"
+          distribution: "temurin"
+
+      - name: Compile Tests with Maven
+        run: mvn clean test-compile
+
+      - name: Run Tests and GZoltar with Maven
+        run: mvn -P sufire gzoltar:prepare-agent test
+
+      - name: Prepare GZoltar Report
+        run: mvn gzoltar:fl-report
+
+      - name: Run Gzoltar Action
+        uses: GZoltar/gzoltar-github-action@v0.0.1
+        with:
+          build-path: "/com.gzoltar.maven.examples/target"
+          sfl-ranking: "[ochiai]"
+          sfl-threshold: "[0.5]"
+          sfl-ranking-order: "ochiai"
+          upload-artifacts: true
